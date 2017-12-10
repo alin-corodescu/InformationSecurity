@@ -2,6 +2,7 @@
 #include <cstring>
 #include "openssl/evp.h"
 #include <openssl/err.h>
+#include "openssl/aes.h"
 void handleErrors(void)
 {
     ERR_print_errors_fp(stderr);
@@ -25,7 +26,7 @@ int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
      * In this example we are using 256 bit AES (i.e. a 256 bit key). The
      * IV size for *most* modes is the same as the block size. For AES this
      * is 128 bits */
-    if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
+    if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_128_cbc(), NULL, key, iv))
         handleErrors();
 
     /* Provide the message to be encrypted, and obtain the encrypted output.
@@ -64,7 +65,7 @@ int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
      * In this example we are using 256 bit AES (i.e. a 256 bit key). The
      * IV size for *most* modes is the same as the block size. For AES this
      * is 128 bits */
-    if(1 != EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
+    if(1 != EVP_DecryptInit_ex(ctx, EVP_aes_128_cbc(), NULL, key, iv))
         handleErrors();
 
     /* Provide the message to be decrypted, and obtain the plaintext output.
@@ -91,11 +92,11 @@ int main() {
  * real application? :-)
  */
 
-    /* A 256 bit key */
-    unsigned char *key = (unsigned char *)"01234567890123456789012345678901";
+    /* median word key*/
+    unsigned char *key = (unsigned char *)"\x6D\x65\x64\x69\x61\x6E\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20";
 
     /* A 128 bit IV */
-    unsigned char *iv = (unsigned char *)"0123456789012345";
+    unsigned char *iv = (unsigned char *)"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f";
 
     /* Message to be encrypted */
     unsigned char *plaintext =
@@ -131,5 +132,14 @@ int main() {
     printf("Decrypted text is:\n");
     printf("%s\n", decryptedtext);
 
+    printf("Cipher len : %d\n decrypted len : %d, %d", ciphertext_len, decryptedtext_len, (int)strlen ((char *)plaintext) );
+
+    FILE* plain = fopen("pt","w");
+    fprintf(plain, "%s",(char*)plaintext);
+    fclose(plain);
+
+    FILE* encrypted = fopen("ct_cbc","w");
+    fwrite(ciphertext, 1, ciphertext_len, encrypted);
+    fclose(encrypted);
     return 0;
 }

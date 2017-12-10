@@ -9,6 +9,8 @@ include_directories(/usr/local/ssl/include)
 link_directories(/usr/local/ssl/lib/)
 link_libraries(crypto dl)
 
-set(SOURCE_FILES main.cpp)
-add_executable(exercise1 ${SOURCE_FILES})
+add_executable(exercise1 ex1.cpp)
 target_link_libraries(exercise1 ${SSL_LIBS})
+
+add_executable(main main.cpp)
+target_link_libraries(main ${SSL_LIBS})
