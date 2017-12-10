@@ -71,6 +71,7 @@ int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
     /* Create and initialise the context */
     if(!(ctx = EVP_CIPHER_CTX_new())) handleErrors();
 
+
     /* Initialise the decryption operation. IMPORTANT - ensure you use a key
      * and IV size appropriate for your cipher
      * In this example we are using 256 bit AES (i.e. a 256 bit key). The
