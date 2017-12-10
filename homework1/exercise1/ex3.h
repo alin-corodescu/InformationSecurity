@@ -12,4 +12,6 @@ unsigned char *iv = (unsigned char *)"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x
 unsigned char *key3 = (unsigned char *)"\x6D\x65\x64\x69\x61\x6E\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20";
 
 void applyKey(void *in, void *out, unsigned char *key);
+
+void xorBlocks(char* b1, char* b2);
 #endif //EXERCISE1_EX3_H

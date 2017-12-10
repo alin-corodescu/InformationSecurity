@@ -20,3 +20,7 @@ target_link_libraries(exercise2 ${SSL_LIBS})
 
 add_executable(exercise3 ex3.h A.cpp B.cpp KM.cpp ex3.cpp)
 target_link_libraries(exercise3 ${SSL_LIBS})
+
+add_executable(testConf test.cpp)
+target_link_libraries(testConf ${SSL_LIBS})
+

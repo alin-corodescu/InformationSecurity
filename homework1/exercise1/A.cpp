@@ -14,6 +14,8 @@ void send_file(int fd, char *k, unsigned char *iv, char *mode);
 
 void decryptKey(char *k);
 
+void padBuffer(char *buffer, int bytes);
+
 int main(int argc, char* argv[]) {
 
     int a_b_fd, a_km_fd;
@@ -50,6 +52,7 @@ void decryptKey(char *k) {
 }
 
 void send_file(int fd, char *k, unsigned char *iv, char *mode) {
+    bool finished = false;
     void* buffer = malloc(BLOCK_SIZE);
     FILE* in = fopen(IN, "rb");
 
@@ -66,11 +69,19 @@ void send_file(int fd, char *k, unsigned char *iv, char *mode) {
             bytes_read += (int) fread(buffer+bytes_read, (size_t) (BLOCK_SIZE - bytes_read), 1, in);
         }
 
-        if (bytes_read == 0)
-            break;
+        if (bytes_read < BLOCK_SIZE)
+        {
+            // we have reached the end of file
+            padBuffer((char *) buffer, bytes_read);
+            finished = true;
+        }
 
-        // Pad the buffer;
-        // Generate the cipherBlock
+        if (previousBlock != NULL) {
+
+            // XOR the buffer with the previous block
+            xorBlocks((char *) buffer, (char *) previousBlock);
+
+        }
         applyKey(buffer, cipherTextBuffer, (unsigned char *) k);
 
         if (previousBlock != NULL)
@@ -80,5 +91,20 @@ void send_file(int fd, char *k, unsigned char *iv, char *mode) {
         while(written_bytes < BLOCK_SIZE) {
             written_bytes += write(fd, cipherTextBuffer + written_bytes, (size_t) (BLOCK_SIZE - written_bytes));
         }
+
+        if (finished) {
+            fclose(in);
+            close(fd);
+            break;
+        }
+
     }
+}
+
+void padBuffer(char *buffer, int bytes) {
+    int toPad = BLOCK_SIZE - bytes;
+    for (int i = bytes; i < BLOCK_SIZE -1; i++) {
+        buffer[i] = 0;
+    }
+    buffer[BLOCK_SIZE - 1] = (char) toPad;
 }
