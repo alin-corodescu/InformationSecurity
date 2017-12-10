@@ -188,5 +188,12 @@ int main(int argc, char *argv[]) {
 
     }
     printf("It took the program %d tries\n", tries);
+
+    printf("The key is: ");
+    for (int i = 0; i < 16; i++) {
+        if (word[i] == 0)
+            word[i] = ' ';
+        printf("%X",word[i]);
+    }
     return 0;
 }
