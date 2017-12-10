@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
 }
 
 void decryptKey(char *k) {
-
+    applyKey(k,k,key3);
 }
 
 void send_file(int fd, char *k, unsigned char *iv, char *mode) {
