@@ -69,7 +69,9 @@ void send_file(int fd, char *k, unsigned char *iv, char *mode) {
         if (bytes_read == 0)
             break;
 
-        int len = applyKey(cipherTextBuffer, buffer, (unsigned char *) k, bytes_read);
+        // Pad the buffer;
+        // Generate the cipherBlock
+        applyKey(buffer, cipherTextBuffer, (unsigned char *) k);
 
         if (previousBlock != NULL)
             memcpy(previousBlock, cipherTextBuffer, BLOCK_SIZE);

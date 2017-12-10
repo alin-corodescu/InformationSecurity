@@ -8,13 +8,8 @@
 #include <openssl/aes.h>
 
 
-int applyKey(void *buffer, void *plainText, unsigned char *key, int plain_len) {
-    int len;
-    int fin;
-    EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-    EVP_EncryptInit(ctx, EVP_aes_128_ecb(), NULL, key);
-    EVP_EncryptUpdate(ctx, (unsigned char *) buffer, &len, (const unsigned char *) plainText, plain_len);
-    EVP_EncryptFinal_ex(ctx, (unsigned char *) (buffer + len), &fin);
-
-    return len + fin;
+void applyKey(void *in, void *out, unsigned char *key) {
+    AES_KEY encrypt;
+    AES_set_encrypt_key(key, 128, &encrypt);
+    AES_encrypt((const unsigned char *) in, (unsigned char *) out, &encrypt);
 }
