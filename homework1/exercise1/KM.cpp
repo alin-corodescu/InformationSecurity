@@ -23,7 +23,6 @@ int main(int argc, char* argv[]) {
     // 16 bytes for the key
     char * k = (char *) malloc(16);
 
-
     b_km_fd = open("tmp/b_km", O_RDONLY);
     a_km_fd = open("tmp/a_km", O_RDONLY);
     km_a_fd = open("tmp/km_a", O_WRONLY);
@@ -37,9 +36,9 @@ int main(int argc, char* argv[]) {
     int result = read(a_km_fd, &mode, 1);
     printf("%d Read the mode from A: %c\n", result, mode);
     if (mode == 'E')
-        applyKey((void *) k1, k, key3);
+        encrypt((void *) k1, k, key3);
     else
-        applyKey((void *) k2, k, key3);
+        encrypt((void *) k2, k, key3);
 
     int bytes_written = 0;
     while (bytes_written < BLOCK_SIZE) {

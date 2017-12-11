@@ -55,10 +55,7 @@ int main(int argc, char* argv[]) {
     printf("Read the key from KM\n");
 
     decryptKey(k);
-    for (int i = 0; i <BLOCK_SIZE; i++) {
-        printf("%X",k[i]);
-    }
-    printf("\n");
+    printKey(k);
 
     char signal = 0;
     write(b_a_fd, &signal, 1);
@@ -88,7 +85,7 @@ void receive_file(int fd, char *k, unsigned char *iv, char *mode) {
         }
 
         // Decrypt the block
-        applyKey(cipherTextBuffer, plainTextBuffer, (unsigned char *) k);
+        decrypt(cipherTextBuffer, plainTextBuffer, (unsigned char *) k);
         printf("Applied the key!");
         // if operating in cbc mode also apply the xor
         if (previousBlock != NULL) {
@@ -132,5 +129,5 @@ void unpad_bytes(char *buffer) {
 }
 
 void decryptKey(char *k) {
-    applyKey(k,k,key3);
+    decrypt(k, k, key3);
 }

@@ -23,12 +23,12 @@ int main(int argc, char* argv[]) {
     // 16 bytes for the key
     char * k = (char *) malloc(16);
 
-    mkfifo("tmp/a_b", 0666);
-    mkfifo("tmp/b_a", 0666);
-    mkfifo("tmp/km_a", 0666);
-    mkfifo("tmp/a_km", 0666);
-    mkfifo("tmp/km_b", 0666);
-    mkfifo("tmp/b_km", 0666);
+    mkfifo("tmp/a_b", 0777);
+    mkfifo("tmp/b_a", 0777);
+    mkfifo("tmp/km_a", 0777);
+    mkfifo("tmp/a_km", 0777);
+    mkfifo("tmp/km_b", 0777);
+    mkfifo("tmp/b_km", 0777);
 
     a_b_fd = open("tmp/a_b", O_WRONLY);
     a_km_fd = open("tmp/a_km", O_WRONLY);
@@ -53,10 +53,7 @@ int main(int argc, char* argv[]) {
     printf("Read the key from KM\n");
 
     decryptKey(k);
-    for (int i = 0; i <BLOCK_SIZE; i++) {
-        printf("%X",k[i]);
-    }
-    printf("\n");
+    printKey(k);
 
     // wait for B to confirm that he is ready
     int response_code;
@@ -70,7 +67,7 @@ int main(int argc, char* argv[]) {
 }
 
 void decryptKey(char *k) {
-    applyKey(k,k,key3);
+    decrypt(k, k, key3);
 }
 
 void send_file(int fd, char *k, unsigned char *iv, char *mode) {
@@ -102,7 +99,7 @@ void send_file(int fd, char *k, unsigned char *iv, char *mode) {
             // XOR the buffer with the previous block
             xorBlocks((char *) buffer, (char *) previousBlock);
         }
-        applyKey(buffer, cipherTextBuffer, (unsigned char *) k);
+        encrypt(buffer, cipherTextBuffer, (unsigned char *) k);
 
         if (previousBlock != NULL)
             memcpy(previousBlock, cipherTextBuffer, BLOCK_SIZE);
