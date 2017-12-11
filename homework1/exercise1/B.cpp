@@ -26,7 +26,6 @@ int main(int argc, char* argv[]) {
     // 16 bytes for the key
     char * k = (char *) malloc(16);
 
-    mkfifo("tmp/a_b", 0666);
     mkfifo("tmp/b_km", 0666);
 
     a_b_fd = open("tmp/a_b", O_RDWR);
@@ -49,6 +48,10 @@ int main(int argc, char* argv[]) {
     printf("Read the key from KM\n");
 
     decryptKey(k);
+    for (int i = 0; i <BLOCK_SIZE; i++) {
+        printf("%X",k[i]);
+    }
+    printf("\n");
 
     char signal = 0;
     write(a_b_fd, &signal, 1);

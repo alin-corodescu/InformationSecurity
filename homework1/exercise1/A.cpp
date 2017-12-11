@@ -44,12 +44,19 @@ int main(int argc, char* argv[]) {
 
     printf("Read the key from KM\n");
 
+    decryptKey(k);
+    for (int i = 0; i <BLOCK_SIZE; i++) {
+        printf("%X",k[i]);
+    }
+    printf("\n");
+
     // wait for B to confirm that he is ready
     int response_code;
     while(!read(a_b_fd, &response_code, 1));
     printf("Got the response from B\n");
 
-    decryptKey(k);
+
+
     send_file(a_b_fd, k, iv, argv[1]);
     printf("Sent the file to B\n");
 }
