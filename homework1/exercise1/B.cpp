@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <malloc.h>
 #include <cstring>
+#include <errno.h>
 #include "ex3.h"
 
 
@@ -22,19 +23,25 @@ void unpad_bytes(char *buffer);
 
 int main(int argc, char* argv[]) {
 
-    int a_b_fd, b_km_fd;
+    int a_b_fd, b_a_fd, km_b_fd, b_km_fd;
     // 16 bytes for the key
     char * k = (char *) malloc(16);
 
-    mkfifo("tmp/b_km", 0666);
 
-    a_b_fd = open("tmp/a_b", O_RDWR);
-    b_km_fd = open("tmp/b_km", O_RDWR);
+    a_b_fd = open("tmp/a_b", O_RDONLY);
+    b_km_fd = open("tmp/b_km", O_WRONLY);
+    b_a_fd = open("tmp/b_a", O_WRONLY);
+    km_b_fd = open("tmp/km_b", O_RDONLY);
 
+    if (a_b_fd == -1)
+        printf(strerror(errno));
     // Write the first letter of the argument given
     char mode;
-    read(a_b_fd, &mode, 1);
-    printf("Read the mode %c\n",mode);
+    int result;
+    result = read(a_b_fd, &mode, 1);
+    if (result == -1)
+        printf(strerror(errno));
+    printf(" %d Read the mode %c\n",result, mode);
 
     // to the km as well
     write(b_km_fd, &mode, 1);
@@ -43,7 +50,7 @@ int main(int argc, char* argv[]) {
     // wait for the key
     int read_bytes = 0;
     while(read_bytes < BLOCK_SIZE) {
-        read_bytes += read(b_km_fd, k + read_bytes, (size_t) (BLOCK_SIZE - read_bytes));
+        read_bytes += read(km_b_fd, k + read_bytes, (size_t) (BLOCK_SIZE - read_bytes));
     }
     printf("Read the key from KM\n");
 
@@ -54,7 +61,7 @@ int main(int argc, char* argv[]) {
     printf("\n");
 
     char signal = 0;
-    write(a_b_fd, &signal, 1);
+    write(b_a_fd, &signal, 1);
 
     receive_file(a_b_fd, k, iv, argv[1]);
     printf("\n\nReceived the file from A\n");

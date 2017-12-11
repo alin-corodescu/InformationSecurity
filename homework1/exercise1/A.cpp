@@ -9,7 +9,7 @@
 #include "ex3.h"
 
 
-#define IN "test.txt"
+#define IN "text.txt"
 
 void send_file(int fd, char *k, unsigned char *iv, char *mode);
 
@@ -19,27 +19,35 @@ void padBuffer(char *buffer, int bytes);
 
 int main(int argc, char* argv[]) {
 
-    int a_b_fd, a_km_fd;
+    int a_b_fd, a_km_fd, b_a_fd, km_a_fd;
     // 16 bytes for the key
     char * k = (char *) malloc(16);
 
     mkfifo("tmp/a_b", 0666);
+    mkfifo("tmp/b_a", 0666);
+    mkfifo("tmp/km_a", 0666);
     mkfifo("tmp/a_km", 0666);
+    mkfifo("tmp/km_b", 0666);
+    mkfifo("tmp/b_km", 0666);
 
-    a_b_fd = open("tmp/a_b", O_RDWR);
-    a_km_fd = open("tmp/a_km", O_RDWR);
+    a_b_fd = open("tmp/a_b", O_WRONLY);
+    a_km_fd = open("tmp/a_km", O_WRONLY);
+    b_a_fd = open("tmp/b_a", O_RDONLY);
+    km_a_fd = open("tmp/km_a", O_RDONLY);
 
+
+    int result;
     // Write the first letter of the argument given
-    while(!write(a_b_fd, argv[1], 1));
-    printf("Sent the mode to B: %c\n", argv[1][0]);
+    while(!(result = write(a_b_fd, argv[1], 1)));
+    printf("%d Sent the mode to B: %c\n", result, argv[1][0]);
     // to the km as well
-    while(!write(a_km_fd, argv[1], 1));
-    printf("Sent the mode to KM: %c\n", argv[1][0]);
+    while(!(result = write(a_km_fd, argv[1], 1)));
+    printf("%d Sent the mode to KM: %c\n", result, argv[1][0]);
 
     // wait for the key
     int read_bytes = 0;
     while(read_bytes < BLOCK_SIZE) {
-        read_bytes += read(a_km_fd, k + read_bytes, (size_t) (BLOCK_SIZE - read_bytes));
+        read_bytes += read(km_a_fd, k + read_bytes, (size_t) (BLOCK_SIZE - read_bytes));
     }
 
     printf("Read the key from KM\n");
@@ -52,7 +60,7 @@ int main(int argc, char* argv[]) {
 
     // wait for B to confirm that he is ready
     int response_code;
-    while(!read(a_b_fd, &response_code, 1));
+    while(!read(b_a_fd, &response_code, 1));
     printf("Got the response from B\n");
 
 
@@ -80,7 +88,7 @@ void send_file(int fd, char *k, unsigned char *iv, char *mode) {
     {
         int bytes_read = 0;
         while (bytes_read < BLOCK_SIZE && !feof(in)) {
-            bytes_read += (int) fread(buffer+bytes_read, (size_t) (BLOCK_SIZE - bytes_read), 1, in);
+            bytes_read += (int) fread(buffer + bytes_read, (size_t) (BLOCK_SIZE - bytes_read), 1, in);
         }
         printf("Read a block of %d bytes\n", bytes_read);
         if (bytes_read < BLOCK_SIZE)
