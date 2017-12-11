@@ -9,7 +9,8 @@
 #include "ex3.h"
 
 
-#define IN "test.txt'
+#define IN "test.txt"
+
 void send_file(int fd, char *k, unsigned char *iv, char *mode);
 
 void decryptKey(char *k);
@@ -30,8 +31,10 @@ int main(int argc, char* argv[]) {
 
     // Write the first letter of the argument given
     while(!write(a_b_fd, argv[1], 1));
+    printf("Sent the mode to B: %c\n", argv[1][0]);
     // to the km as well
     while(!write(a_km_fd, argv[1], 1));
+    printf("Sent the mode to KM: %c\n", argv[1][0]);
 
     // wait for the key
     int read_bytes = 0;
@@ -39,9 +42,12 @@ int main(int argc, char* argv[]) {
         read_bytes += read(a_km_fd, k + read_bytes, (size_t) (BLOCK_SIZE - read_bytes));
     }
 
+    printf("Read the key from KM\n");
+
     // wait for B to confirm that he is ready
     int response_code;
     while(!read(a_b_fd, &response_code, 1));
+    printf("Got the response from B\n");
 
     decryptKey(k);
     send_file(a_b_fd, k, iv, argv[1]);
