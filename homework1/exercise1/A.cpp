@@ -72,7 +72,7 @@ void decryptKey(char *k) {
 
 void send_file(int fd, char *k, unsigned char *iv, char *mode) {
     bool finished = false;
-    void* buffer = malloc(BLOCK_SIZE);
+    char* buffer = (char *) malloc(BLOCK_SIZE);
     FILE* in = fopen(IN, "rb");
 
     void* cipherTextBuffer = malloc(BLOCK_SIZE);
@@ -85,7 +85,7 @@ void send_file(int fd, char *k, unsigned char *iv, char *mode) {
     {
         int bytes_read = 0;
         while (bytes_read < BLOCK_SIZE && !feof(in)) {
-            bytes_read += (int) fread(buffer + bytes_read, (size_t) (BLOCK_SIZE - bytes_read), 1, in);
+            bytes_read += (int) fread(buffer + bytes_read, 1, (size_t) (BLOCK_SIZE - bytes_read), in);
         }
         printf("Read a block of %d bytes\n", bytes_read);
         if (bytes_read < BLOCK_SIZE)

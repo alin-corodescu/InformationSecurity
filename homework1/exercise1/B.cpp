@@ -19,7 +19,7 @@ void decryptKey(char *k);
 
 void receive_file(int fd, char *k, unsigned char *iv, char *mode);
 
-void unpad_bytes(char *buffer);
+int data_bytes(char *buffer);
 
 int main(int argc, char* argv[]) {
 
@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
     char signal = 0;
     write(b_a_fd, &signal, 1);
 
-    receive_file(a_b_fd, k, iv, argv[1]);
+    receive_file(a_b_fd, k, iv, &mode);
     printf("\n\nReceived the file from A\n");
 }
 
@@ -73,6 +73,7 @@ void receive_file(int fd, char *k, unsigned char *iv, char *mode) {
     // +1 for the \0
     char* printBuffer = (char *) malloc(BLOCK_SIZE + 1);
     printBuffer[BLOCK_SIZE] = 0;
+    printBuffer[0] = 0;
     if (mode[0] == 'C') {
         previousBlock = malloc(BLOCK_SIZE);
         memcpy(previousBlock, iv, BLOCK_SIZE);
@@ -83,49 +84,55 @@ void receive_file(int fd, char *k, unsigned char *iv, char *mode) {
         while (bytes_read < BLOCK_SIZE && !feof(in)) {
             bytes_read += fread(cipherTextBuffer + bytes_read, 1, BLOCK_SIZE - bytes_read, in);
         }
+        // Print the previous part
 
+        int data_len;
+        if (feof(in)) {
+            data_len = data_bytes(printBuffer);
+            printBuffer[data_len] = 0;
+            break;
+        }
+            //Not a final block
+        else data_len = BLOCK_SIZE;
+        printf("%s", printBuffer);
         // Decrypt the block
         decrypt(cipherTextBuffer, plainTextBuffer, (unsigned char *) k);
-        printf("Applied the key!");
+//        printf("Applied the key!\n");
         // if operating in cbc mode also apply the xor
         if (previousBlock != NULL) {
             xorBlocks(plainTextBuffer, (char *) previousBlock);
-            printf("xor'ed blocks");
+//            printf("xor'ed blocks\n");
             mempcpy(previousBlock, cipherTextBuffer, BLOCK_SIZE);
         }
 
-        // We have reached the end
-        if (bytes_read < BLOCK_SIZE) {
-            finished = true;
-
-            // This is unnecessary, it's just for show here, in case we will deal with files other than text sometime
-            unpad_bytes(plainTextBuffer);
-        }
-
-        mempcpy(printBuffer, plainTextBuffer, BLOCK_SIZE);
-        printf("%s", printBuffer);
-
-        if (finished) {
-            free(printBuffer);
-            free(plainTextBuffer);
-            if (previousBlock != NULL)
-                free(previousBlock);
-            fclose(in);
-            break;
-        }
+        // This is unnecessary, it's just for show here, in case we will deal with files other than text sometime
+        mempcpy(printBuffer, plainTextBuffer, data_len);
     }
+    printf("%s", printBuffer);
+    free(printBuffer);
+    free(plainTextBuffer);
+    if (previousBlock != NULL)
+        free(previousBlock);
+    fclose(in);
 }
 
-void unpad_bytes(char *buffer) {
+/**
+ * returns the number of actual data bytes in the block (takes out the padding)
+ * @param buffer
+ * @return
+ */
+int data_bytes(char *buffer) {
     int end = BLOCK_SIZE - 1;
     int padded_bytes = (int) buffer[end];
-    printf("The block is padded with %d bytes\n", padded_bytes + 1);
-    int i = 0;
-    while(padded_bytes) {
-        buffer[end - i] = 0;
-        i++;
-        padded_bytes--;
-    }
+    return BLOCK_SIZE - (padded_bytes + 1);
+//    printf("The block is padded with %d bytes\n", padded_bytes + 1);
+//    int i = 0;
+//    // Here we can modify the data however we want, or even return the length of data in the block
+//    while(padded_bytes) {
+//        buffer[end - i] = 0;
+//        i++;
+//        padded_bytes--;
+//    }
 }
 
 void decryptKey(char *k) {
