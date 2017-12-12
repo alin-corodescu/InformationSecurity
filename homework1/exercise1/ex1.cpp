@@ -12,7 +12,10 @@
 
 #define BLOCK_SIZE 128
 
+#define BUFFER_SIZE 1024
+
 EVP_CIPHER* cipher;
+EVP_CIPHER_CTX *ctx;
 
 void handleErrors(void)
 {
@@ -63,49 +66,34 @@ int main(int argc, char *argv[]) {
             cipher = (EVP_CIPHER *) EVP_aes_128_ecb();
 
     }
-    /* Set up the key and iv. Do I need to say to not hard code these in a
- * real application? :-)
- */
+
+    ctx = EVP_CIPHER_CTX_new();
 
     FILE* pt = fopen(pt_path, "rb");
-    fseek(pt, 0, SEEK_END);
-    long file_size = ftell(pt);
-    fseek(pt, 0, SEEK_SET);
 
-    unsigned char* plaintext = (unsigned char*) malloc(file_size + 1);
-    fread(plaintext, 1, file_size, pt);
-    fclose(pt);
-    // Mark the end of the text
-    plaintext[file_size] = '\0';
+    unsigned char* plaintext = (unsigned char*) malloc(2* BUFFER_SIZE);
 
 
 
     FILE* ct = fopen(ct_path, "rb");
-    fseek(ct, 0, SEEK_END);
-    long crypt_file_size = ftell(ct);
-    fseek(ct, 0, SEEK_SET);
 
-    unsigned char* ciphertext = (unsigned char*) malloc(file_size);
-    fread(ciphertext, 1, crypt_file_size, ct);
-    fclose(ct);
-
-
-    int output_size = (int) ((file_size / BLOCK_SIZE + 1) * BLOCK_SIZE);
+    unsigned char* ciphertext = (unsigned char*) malloc(BUFFER_SIZE);
 
     unsigned char *decryptedtext;
-    decryptedtext = (unsigned char*) malloc((size_t) output_size);
+    decryptedtext = static_cast<unsigned char *> (malloc(2 * BUFFER_SIZE));
 
 
     /* A 256 bit key */
     unsigned char *key = (unsigned char *)"0123456789012345";
 
-/* A 128 bit IV */
+    /* A 128 bit IV */
     unsigned char *iv = (unsigned char *)"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f";
 
     char word[100];
     FILE* dict = fopen("word_dict.txt", "r");
     int tries = 0;
-    while (true) {
+    bool finished = false;
+    while (!finished) {
         tries++;
         // read the next word in the dictionary
         fscanf(dict, "%s", word);
@@ -119,21 +107,42 @@ int main(int argc, char *argv[]) {
         // the implementation will take into account only the first 16 bytes anyway
         key = (unsigned char*) word;
 
-        int decryptedtext_len, ciphertext_len = crypt_file_size;
+        // Here begins the decryption
+        // Reset the files
+        fseek(ct, 0, SEEK_SET);
+        fseek(pt, 0, SEEK_SET);
+        clearerr(ct);
+        clearerr(pt);
+        // Reinitialize the decryption context
+        EVP_DecryptInit_ex(ctx, cipher, NULL, key, iv);
+        while (!feof(ct)) {
+            int dt_len;
+            int ct_len = fread(ciphertext, 1, BUFFER_SIZE, ct);
+            // Decrypt the next part
+            int status = EVP_DecryptUpdate(ctx, decryptedtext, &dt_len, ciphertext, ct_len);
+            if (status != 1)
+                break;
+            if (ct_len < BUFFER_SIZE) {
+                int final;
+                status = EVP_DecryptFinal_ex(ctx, decryptedtext + dt_len, &final);
+                if (status != 1)
+                    break;
+                dt_len += final;
+            }
+            // Read the next block of plain text
+            int pt_len = fread(plaintext, 1, dt_len, pt);
+            if (pt_len != dt_len) {
+                // The codes don't match
+                break;
+            }
 
-        /* Decrypt the ciphertext */
-        decryptedtext_len = decrypt(ciphertext, ciphertext_len, key, iv, decryptedtext, false);
-
-        if (decryptedtext_len == -1)
-            continue;
-
-        if (!memcmp(decryptedtext, plaintext, file_size)) {
-            word[word_len] = 0;
-            printf("The word is %s\n",word);
-
-            break;
+            if (!memcmp(decryptedtext, plaintext, dt_len)) {
+                word[word_len] = 0;
+                printf("The word is %s\n",word);
+                finished = true;
+                break;
+            }
         }
-
     }
     printf("It took the program %d tries\n", tries);
 
