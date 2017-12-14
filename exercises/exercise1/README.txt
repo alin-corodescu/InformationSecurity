@@ -16,3 +16,8 @@ Acesta va citi cate o parte de BUFFER_SIZE din fisierul criptat, pe care o va de
 
 
 Programul a fost testat pe fiserele de intrare incluse in folder + pe siruri de caractere scrise direct in cod (in timpul dezvoltarii).
+
+
+Example to run the program
+make
+./out pt ct_cbc CBC
